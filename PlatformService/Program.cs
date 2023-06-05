@@ -1,26 +1,47 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using PlatformService.AsyncDataServices;
+using PlatformService.Data;
+using PlatformService.Models;
+using PlatformService.Services;
+using PlatformService.SyncDataServices.Http;
 
-namespace PlatformService
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services
+    .AddScoped<IPlatformRepo, PlatformRepo>()
+    .AddScoped<IPlatformService, PlatformService.Services.PlatformService>()
+    .AddSingleton<IMessageBusClient, MessageBusClient>();
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConn"));
+});
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-    }
-}
+builder.Services
+    .AddScoped<IPlatformRepo, PlatformRepo>();
+
+builder.Services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
+
+var app = builder.Build();
+
+
+DbInit.Initialize(app);
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+//app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+app.MapGet("/env", () => { return app.Environment.EnvironmentName; });
+
+app.Run();

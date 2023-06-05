@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace PlatformService.Dtos
 {
@@ -6,10 +6,8 @@ namespace PlatformService.Dtos
     {
         [Required]
         public string Name { get; set; }
-
         [Required]
-        public string Publisher { get; set; }
-
+        public string Pubslisher { get; set; }
         [Required]
         public string Cost { get; set; }
     }

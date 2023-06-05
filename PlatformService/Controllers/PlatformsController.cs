@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using PlatformService.AsyncDataServices;
 using PlatformService.Data;
 using PlatformService.Dtos;
 using PlatformService.Models;
+using PlatformService.Services;
 using PlatformService.SyncDataServices.Http;
 
 namespace PlatformService.Controllers
@@ -15,77 +12,44 @@ namespace PlatformService.Controllers
     [ApiController]
     public class PlatformsController : ControllerBase
     {
-        private readonly IPlatformRepo _repository;
+        private readonly IPlatformService _platformService;
         private readonly IMapper _mapper;
-        private readonly ICommandDataClient _commandDataClient;
-        private readonly IMessageBusClient _messageBusClient;
 
         public PlatformsController(
-            IPlatformRepo repository, 
-            IMapper mapper,
-            ICommandDataClient commandDataClient,
-            IMessageBusClient messageBusClient)
+            IPlatformService platformService,
+            IMapper mapper)
         {
-            _repository = repository;
+            _platformService = platformService;
             _mapper = mapper;
-            _commandDataClient = commandDataClient;
-            _messageBusClient = messageBusClient;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<PlatformReadDto>> GetPlatforms()
+        public ActionResult<IEnumerable<PlatformReadDto>> GetAllPlatforms()
         {
-            Console.WriteLine("--> Getting Platforms....");
-
-            var platformItem = _repository.GetAllPlatforms();
-
-            return Ok(_mapper.Map<IEnumerable<PlatformReadDto>>(platformItem));
+            var platforms = _platformService.GetAllPlatforms();
+            var result = _mapper.Map<IEnumerable<PlatformReadDto>>(platforms);
+            return Ok(result);
         }
 
-        [HttpGet("{id}", Name = "GetPlatformById")]
+        [HttpGet("{id}")]
         public ActionResult<PlatformReadDto> GetPlatformById(int id)
         {
-            var platformItem = _repository.GetPlatformById(id);
-            if (platformItem != null)
-            {
-                return Ok(_mapper.Map<PlatformReadDto>(platformItem));
-            }
+            var platform = _platformService.GetPlatformById(id);
+            if (platform == null) return NotFound();
 
-            return NotFound();
+            var result = _mapper.Map<PlatformReadDto>(platform);
+            return Ok(result);
         }
 
         [HttpPost]
-        public async Task<ActionResult<PlatformReadDto>> CreatePlatform(PlatformCreateDto platformCreateDto)
+        public async Task<ActionResult<PlatformReadDto>> CreatePlatform
+            ([FromBody] PlatformCreateDto dto)
         {
-            var platformModel = _mapper.Map<Platform>(platformCreateDto);
-            _repository.CreatePlatform(platformModel);
-            _repository.SaveChanges();
+            var platform = _mapper.Map<Platform>(dto);
+            await _platformService.CreatePlatformAsync(platform);
 
-            var platformReadDto = _mapper.Map<PlatformReadDto>(platformModel);
-
-            // Send Sync Message
-            try
-            {
-                await _commandDataClient.SendPlatformToCommand(platformReadDto);
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine($"--> Could not send synchronously: {ex.Message}");
-            }
-
-            //Send Async Message
-            try
-            {
-                var platformPublishedDto = _mapper.Map<PlatformPublishedDto>(platformReadDto);
-                platformPublishedDto.Event = "Platform_Published";
-                _messageBusClient.PublishNewPlatform(platformPublishedDto);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"--> Could not send asynchronously: {ex.Message}");
-            }
-
-            return CreatedAtRoute(nameof(GetPlatformById), new { Id = platformReadDto.Id}, platformReadDto);
+            var readDto = _mapper.Map<PlatformReadDto>(platform);
+            return CreatedAtAction(nameof(GetPlatformById), new { id = readDto.Id }, readDto);
         }
     }
 }
