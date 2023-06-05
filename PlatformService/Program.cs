@@ -42,6 +42,5 @@ app.UseSwaggerUI();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/env", () => { return app.Environment.EnvironmentName; });
 
 app.Run();
