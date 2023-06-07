@@ -34,7 +34,7 @@ namespace PlatformService.Data
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"--> Migrations failed: {ex.Message}");
+                _logger.LogError($"--> Migrations failed: {ex.Message}");
             }
 
             var anyData = context.Platforms.Any();

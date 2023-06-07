@@ -53,7 +53,7 @@ namespace PlatformService.Services
             catch (Exception ex)
             {
 
-                _logger.LogInformation($"--> Could not send via http: {ex.Message}");
+                _logger.LogError($"--> Could not send via http: {ex.Message}");
             }
 
             //Send by message bus
@@ -63,7 +63,7 @@ namespace PlatformService.Services
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"--> Could not send asynchronously: {ex.Message}");
+                _logger.LogError($"--> Could not send asynchronously: {ex.Message}");
             }
 
             return platform.Id;

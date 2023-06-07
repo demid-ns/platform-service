@@ -13,7 +13,7 @@ namespace CommandService.Data
 
         public void CreateCommand(Command command)
         {
-            if (command != null)
+            if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
             _db.Commands.Add(command);

@@ -1,4 +1,6 @@
+using CommandService.AsyncDataServices;
 using CommandService.Data;
+using CommandService.EventProcessing;
 using CommandService.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +17,9 @@ builder.Services
     .AddScoped<ICommandRepo, CommandRepo>()
     .AddScoped<IPlatformRepo, PlatformRepo>()
     .AddScoped<ICommandService, CommandService.Services.CommandService>()
-    .AddScoped<IPlatformService, PlatformService>();
+    .AddScoped<IPlatformService, PlatformService>()
+    .AddSingleton<IEventProcessor, EventProcessor>()
+    .AddHostedService<MessageBusSubsriber>();
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {

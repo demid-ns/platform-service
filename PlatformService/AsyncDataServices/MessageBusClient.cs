@@ -67,7 +67,7 @@ namespace PlatformService.AsyncDataServices
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"--> Could not connect to the message bus: {ex.Message}");
+                _logger.LogError($"--> Could not connect to the message bus: {ex.Message}");
             }
         }
 
@@ -82,6 +82,13 @@ namespace PlatformService.AsyncDataServices
                 );
             _logger.LogInformation($"--> Message sent: {message}");
         }
+
+        private void RabbitMqConnectionShutdown(
+            object sender, ShutdownEventArgs events)
+        {
+            _logger.LogInformation($"--> RabbitMQ connection shutdown");
+        }
+
         public void Dispose()
         {
             _logger.LogInformation("Message bus disposed");
@@ -90,12 +97,6 @@ namespace PlatformService.AsyncDataServices
                 _channel.Close();
                 _connection.Close();
             }
-        }
-
-        private void RabbitMqConnectionShutdown(
-            object sender, ShutdownEventArgs events)
-        {
-            _logger.LogInformation($"--> RabbitMQ connection shutdown");
         }
     }
 }
